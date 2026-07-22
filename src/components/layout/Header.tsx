@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   userName?: string;
+  onMenuToggle?: () => void;
 }
 
-export default function Header({ userName = "Admin" }: HeaderProps) {
+export default function Header({ userName = "Admin", onMenuToggle }: HeaderProps) {
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
 
@@ -20,7 +21,7 @@ export default function Header({ userName = "Admin" }: HeaderProps) {
   return (
     <header className="h-14 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
       <div className="flex items-center gap-3">
-        <button className="lg:hidden btn btn-ghost p-2" onClick={() => {}}>
+        <button className="lg:hidden btn btn-ghost p-2" onClick={onMenuToggle}>
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>

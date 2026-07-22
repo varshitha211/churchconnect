@@ -5,19 +5,14 @@ import Link from "next/link";
 import type { DashboardStats } from "@/types";
 
 const statCards = [
-  { key: "totalMembers", label: "Total Members", icon: "👥", color: "bg-primary/10 text-primary" },
-  { key: "activeEvents", label: "Active Events", icon: "📅", color: "bg-info/10 text-info" },
-  { key: "upcomingEvents", label: "Upcoming Events", icon: "⏰", color: "bg-warning/10 text-warning" },
-  { key: "notificationsSent", label: "Notifications Sent", icon: "🔔", color: "bg-success/10 text-success" },
-  { key: "notificationsOpened", label: "Notifications Opened", icon: "👁️", color: "bg-accent/10 text-accent" },
-  { key: "whatsappPrepared", label: "WhatsApp Prepared", icon: "💬", color: "bg-success/10 text-success" },
-  { key: "totalCalls", label: "Total Calls", icon: "📞", color: "bg-info/10 text-info" },
-  { key: "callsAnswered", label: "Calls Answered", icon: "✅", color: "bg-success/10 text-success" },
-  { key: "callsNoAnswer", label: "Calls No Answer", icon: "📵", color: "bg-warning/10 text-warning" },
-  { key: "callsBusy", label: "Calls Busy", icon: "🔴", color: "bg-destructive/10 text-destructive" },
-  { key: "callsFailed", label: "Calls Failed", icon: "⚠️", color: "bg-destructive/10 text-destructive" },
-  { key: "totalRsvp", label: "Total RSVPs", icon: "✍️", color: "bg-primary/10 text-primary" },
-  { key: "totalAttendance", label: "Total Attendance", icon: "📋", color: "bg-success/10 text-success" },
+  { key: "totalMembers", label: "Members", icon: "👥", color: "bg-primary/10 text-primary" },
+  { key: "activeEvents", label: "Events", icon: "📅", color: "bg-info/10 text-info" },
+  { key: "upcomingEvents", label: "Upcoming", icon: "⏰", color: "bg-warning/10 text-warning" },
+  { key: "totalAttendance", label: "Attendance", icon: "📋", color: "bg-success/10 text-success" },
+  { key: "totalRsvp", label: "RSVPs", icon: "✍️", color: "bg-primary/10 text-primary" },
+  { key: "notificationsSent", label: "Sent", icon: "🔔", color: "bg-success/10 text-success" },
+  { key: "totalCalls", label: "Calls", icon: "📞", color: "bg-info/10 text-info" },
+  { key: "callsAnswered", label: "Answered", icon: "✅", color: "bg-success/10 text-success" },
 ];
 
 export default function DashboardPage() {
@@ -44,35 +39,35 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Overview of your church communication
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/admin/events/new" className="btn btn-primary">
+          <Link href="/admin/events/new" className="btn btn-primary btn-sm sm:btn">
             + New Event
           </Link>
-          <Link href="/admin/members/import" className="btn btn-secondary">
-            Import Members
+          <Link href="/admin/members/import" className="btn btn-secondary btn-sm sm:btn">
+            Import
           </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {statCards.map((card) => (
-          <div key={card.key} className="card">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${card.color}`}>
+          <div key={card.key} className="card p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-base sm:text-lg ${card.color}`}>
                 {card.icon}
               </div>
               <div>
-                <p className="text-2xl font-bold">
+                <p className="text-lg sm:text-2xl font-bold">
                   {stats ? (stats as unknown as Record<string, number>)[card.key] || 0 : 0}
                 </p>
-                <p className="text-xs text-muted-foreground">{card.label}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">{card.label}</p>
               </div>
             </div>
           </div>

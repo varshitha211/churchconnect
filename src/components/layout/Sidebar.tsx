@@ -36,13 +36,17 @@ const navigation = [
   },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  onNavigate?: () => void;
+}
+
+export default function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden lg:flex lg:flex-col w-64 bg-card border-r border-border h-screen sticky top-0">
+    <aside className="flex flex-col w-64 bg-card border-r border-border h-full">
       <div className="p-4 border-b border-border">
-        <Link href="/admin/dashboard" className="flex items-center gap-3">
+        <Link href="/admin/dashboard" className="flex items-center gap-3" onClick={onNavigate}>
           <div className="w-9 h-9 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-sm">
             C
           </div>
@@ -66,6 +70,7 @@ export default function Sidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={onNavigate}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                       isActive
@@ -85,7 +90,8 @@ export default function Sidebar() {
 
       <div className="p-3 border-t border-border">
         <Link
-          href="/event/demo"
+          href="/"
+          onClick={onNavigate}
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
         >
           <span className="text-base">🌐</span>
