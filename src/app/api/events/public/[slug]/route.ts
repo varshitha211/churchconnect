@@ -39,7 +39,8 @@ export async function GET(
     });
 
     const counts: Record<string, number> = {};
-    rsvpCounts.forEach((r) => { counts[r.response] = r._count; });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (rsvpCounts as any[]).forEach((r: { response: string; _count: number }) => { counts[r.response] = r._count; });
 
     return NextResponse.json({
       success: true,
