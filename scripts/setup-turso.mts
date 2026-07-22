@@ -13,291 +13,353 @@ if (!tursoUrl || !tursoToken) {
 
 const db = createClient({ url: tursoUrl, authToken: tursoToken });
 
+async function dropAllTables() {
+  console.log("Dropping existing tables...");
+
+  const tables = [
+    "SermonBookmark", "BibleReading", "UserNotification", "PrayerRequest",
+    "FollowUp", "AuditLog", "CallLog", "CallCampaign", "NotificationLog",
+    "PushSubscription", "CommunicationLog", "EventRecipient", "MessageTemplate",
+    "Attendance", "QrCode", "Rsvp", "Event", "Member", "Sermon", "Announcement",
+    "User", "Church",
+  ];
+
+  for (const table of tables) {
+    try {
+      await db.execute(`DROP TABLE IF EXISTS "${table}"`);
+    } catch {
+      // ignore
+    }
+  }
+  console.log("All tables dropped.");
+}
+
 async function createTables() {
   console.log("Creating tables...");
 
   await db.executeMultiple(`
-    CREATE TABLE IF NOT EXISTS Church (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      address TEXT,
-      phone TEXT,
-      email TEXT,
-      timezone TEXT DEFAULT 'Asia/Kolkata',
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+    CREATE TABLE IF NOT EXISTS "Church" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "name" TEXT NOT NULL,
+      "address" TEXT,
+      "phone" TEXT,
+      "email" TEXT,
+      "logo" TEXT,
+      "timezone" TEXT NOT NULL DEFAULT 'Asia/Kolkata',
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS User (
-      id TEXT PRIMARY KEY,
-      email TEXT UNIQUE NOT NULL,
-      passwordHash TEXT NOT NULL,
-      name TEXT NOT NULL,
-      role TEXT NOT NULL DEFAULT 'MEMBER',
-      churchId TEXT NOT NULL,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (churchId) REFERENCES Church(id)
+    CREATE TABLE IF NOT EXISTS "User" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "email" TEXT NOT NULL UNIQUE,
+      "passwordHash" TEXT NOT NULL,
+      "name" TEXT NOT NULL,
+      "role" TEXT NOT NULL DEFAULT 'CHURCH_ADMIN',
+      "churchId" TEXT NOT NULL,
+      "isActive" BOOLEAN NOT NULL DEFAULT 1,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("churchId") REFERENCES "Church"("id")
     );
 
-    CREATE TABLE IF NOT EXISTS Member (
-      id TEXT PRIMARY KEY,
-      churchId TEXT NOT NULL,
-      fullName TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      whatsappNumber TEXT,
-      email TEXT,
-      ageGroup TEXT,
-      gender TEXT,
-      area TEXT,
-      avatar TEXT,
-      address TEXT,
-      bloodGroup TEXT,
-      dateOfBirth DATETIME,
-      familyMembers TEXT,
-      isSubscribed INTEGER DEFAULT 1,
-      isArchived INTEGER DEFAULT 0,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (churchId) REFERENCES Church(id),
-      UNIQUE(churchId, phone)
+    CREATE TABLE IF NOT EXISTS "Member" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "churchId" TEXT NOT NULL,
+      "fullName" TEXT NOT NULL,
+      "phone" TEXT NOT NULL,
+      "whatsappNumber" TEXT,
+      "email" TEXT,
+      "ageGroup" TEXT,
+      "gender" TEXT,
+      "area" TEXT,
+      "avatar" TEXT,
+      "address" TEXT,
+      "bloodGroup" TEXT,
+      "dateOfBirth" DATETIME,
+      "familyMembers" TEXT,
+      "isSubscribed" BOOLEAN NOT NULL DEFAULT 1,
+      "isArchived" BOOLEAN NOT NULL DEFAULT 0,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("churchId") REFERENCES "Church"("id"),
+      UNIQUE("churchId", "phone")
     );
 
-    CREATE TABLE IF NOT EXISTS Event (
-      id TEXT PRIMARY KEY,
-      churchId TEXT NOT NULL,
-      name TEXT NOT NULL,
-      slug TEXT NOT NULL,
-      category TEXT NOT NULL,
-      description TEXT,
-      startDate DATETIME NOT NULL,
-      endDate DATETIME,
-      startTime TEXT NOT NULL,
-      venue TEXT NOT NULL,
-      locationLink TEXT,
-      organizerContact TEXT,
-      status TEXT DEFAULT 'DRAFT',
-      voiceEnabled INTEGER DEFAULT 1,
-      rsvpEnabled INTEGER DEFAULT 1,
-      qrAttendance INTEGER DEFAULT 1,
-      registrationReq INTEGER DEFAULT 0,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (churchId) REFERENCES Church(id),
-      UNIQUE(churchId, slug)
+    CREATE TABLE IF NOT EXISTS "Event" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "churchId" TEXT NOT NULL,
+      "createdBy" TEXT NOT NULL DEFAULT '',
+      "name" TEXT NOT NULL,
+      "slug" TEXT NOT NULL UNIQUE,
+      "category" TEXT NOT NULL,
+      "description" TEXT,
+      "startDate" DATETIME NOT NULL,
+      "endDate" DATETIME,
+      "startTime" TEXT NOT NULL,
+      "venue" TEXT NOT NULL,
+      "locationLink" TEXT,
+      "posterImage" TEXT,
+      "organizerContact" TEXT,
+      "registrationReq" BOOLEAN NOT NULL DEFAULT 0,
+      "voiceEnabled" BOOLEAN NOT NULL DEFAULT 1,
+      "rsvpEnabled" BOOLEAN NOT NULL DEFAULT 1,
+      "qrAttendance" BOOLEAN NOT NULL DEFAULT 1,
+      "status" TEXT NOT NULL DEFAULT 'DRAFT',
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("churchId") REFERENCES "Church"("id"),
+      FOREIGN KEY ("createdBy") REFERENCES "User"("id")
     );
 
-    CREATE TABLE IF NOT EXISTS Attendance (
-      id TEXT PRIMARY KEY,
-      eventId TEXT NOT NULL,
-      memberId TEXT NOT NULL,
-      method TEXT DEFAULT 'MANUAL',
-      checkedInBy TEXT,
-      checkedInAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (eventId) REFERENCES Event(id),
-      FOREIGN KEY (memberId) REFERENCES Member(id)
+    CREATE TABLE IF NOT EXISTS "MessageTemplate" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "churchId" TEXT NOT NULL,
+      "name" TEXT NOT NULL,
+      "subject" TEXT,
+      "body" TEXT NOT NULL,
+      "variables" TEXT NOT NULL DEFAULT '[]',
+      "isDefault" BOOLEAN NOT NULL DEFAULT 0,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("churchId") REFERENCES "Church"("id")
     );
 
-    CREATE TABLE IF NOT EXISTS Rsvp (
-      id TEXT PRIMARY KEY,
-      eventId TEXT NOT NULL,
-      memberId TEXT NOT NULL,
-      response TEXT NOT NULL,
-      guestCount INTEGER DEFAULT 0,
-      guestName TEXT,
-      prayerRequest TEXT,
-      message TEXT,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (eventId) REFERENCES Event(id),
-      FOREIGN KEY (memberId) REFERENCES Member(id),
-      UNIQUE(eventId, memberId)
+    CREATE TABLE IF NOT EXISTS "EventRecipient" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "eventId" TEXT NOT NULL,
+      "memberId" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'SELECTED',
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("eventId") REFERENCES "Event"("id"),
+      FOREIGN KEY ("memberId") REFERENCES "Member"("id"),
+      UNIQUE("eventId", "memberId")
     );
 
-    CREATE TABLE IF NOT EXISTS Sermon (
-      id TEXT PRIMARY KEY,
-      churchId TEXT NOT NULL,
-      title TEXT NOT NULL,
-      speaker TEXT,
-      description TEXT,
-      date DATETIME NOT NULL,
-      duration TEXT,
-      youtubeUrl TEXT,
-      audioUrl TEXT,
-      notes TEXT,
-      category TEXT,
-      tags TEXT,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (churchId) REFERENCES Church(id)
+    CREATE TABLE IF NOT EXISTS "CommunicationLog" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "eventId" TEXT NOT NULL,
+      "memberId" TEXT NOT NULL,
+      "channel" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'SENT',
+      "messageContent" TEXT,
+      "sentAt" DATETIME,
+      "deliveredAt" DATETIME,
+      "openedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("eventId") REFERENCES "Event"("id"),
+      FOREIGN KEY ("memberId") REFERENCES "Member"("id")
     );
 
-    CREATE TABLE IF NOT EXISTS Announcement (
-      id TEXT PRIMARY KEY,
-      churchId TEXT NOT NULL,
-      title TEXT NOT NULL,
-      content TEXT NOT NULL,
-      priority TEXT DEFAULT 'NORMAL',
-      targetAudience TEXT DEFAULT 'ALL',
-      published INTEGER DEFAULT 0,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (churchId) REFERENCES Church(id)
+    CREATE TABLE IF NOT EXISTS "PushSubscription" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "endpoint" TEXT NOT NULL UNIQUE,
+      "p256dh" TEXT NOT NULL,
+      "auth" TEXT NOT NULL,
+      "memberId" TEXT,
+      "userAgent" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS Template (
-      id TEXT PRIMARY KEY,
-      churchId TEXT NOT NULL,
-      name TEXT NOT NULL,
-      subject TEXT,
-      body TEXT NOT NULL,
-      isDefault INTEGER DEFAULT 0,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (churchId) REFERENCES Church(id)
+    CREATE TABLE IF NOT EXISTS "NotificationLog" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "title" TEXT NOT NULL,
+      "body" TEXT NOT NULL,
+      "eventId" TEXT,
+      "sentBy" TEXT NOT NULL DEFAULT '',
+      "totalSent" INTEGER NOT NULL DEFAULT 0,
+      "totalDelivered" INTEGER NOT NULL DEFAULT 0,
+      "totalOpened" INTEGER NOT NULL DEFAULT 0,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("eventId") REFERENCES "Event"("id")
     );
 
-    CREATE TABLE IF NOT EXISTS EventRecipient (
-      id TEXT PRIMARY KEY,
-      eventId TEXT NOT NULL,
-      memberId TEXT NOT NULL,
-      status TEXT DEFAULT 'PENDING',
-      sentAt DATETIME,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (eventId) REFERENCES Event(id),
-      FOREIGN KEY (memberId) REFERENCES Member(id)
+    CREATE TABLE IF NOT EXISTS "CallCampaign" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "eventId" TEXT NOT NULL,
+      "name" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'QUEUED',
+      "totalCalls" INTEGER NOT NULL DEFAULT 0,
+      "answered" INTEGER NOT NULL DEFAULT 0,
+      "noAnswer" INTEGER NOT NULL DEFAULT 0,
+      "busy" INTEGER NOT NULL DEFAULT 0,
+      "failed" INTEGER NOT NULL DEFAULT 0,
+      "maxRetries" INTEGER NOT NULL DEFAULT 2,
+      "retryDelayMin" INTEGER NOT NULL DEFAULT 30,
+      "startedAt" DATETIME,
+      "completedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("eventId") REFERENCES "Event"("id")
     );
 
-    CREATE TABLE IF NOT EXISTS QrCode (
-      id TEXT PRIMARY KEY,
-      eventId TEXT NOT NULL,
-      memberId TEXT,
-      token TEXT UNIQUE NOT NULL,
-      isCheckedIn INTEGER DEFAULT 0,
-      checkedInAt DATETIME,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (eventId) REFERENCES Event(id),
-      FOREIGN KEY (memberId) REFERENCES Member(id)
+    CREATE TABLE IF NOT EXISTS "CallLog" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "campaignId" TEXT NOT NULL,
+      "memberId" TEXT NOT NULL,
+      "phone" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'QUEUED',
+      "attempts" INTEGER NOT NULL DEFAULT 0,
+      "lastAttemptAt" DATETIME,
+      "callDuration" INTEGER,
+      "recordingUrl" TEXT,
+      "retryCount" INTEGER NOT NULL DEFAULT 0,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("campaignId") REFERENCES "CallCampaign"("id"),
+      FOREIGN KEY ("memberId") REFERENCES "Member"("id")
     );
 
-    CREATE TABLE IF NOT EXISTS Campaign (
-      id TEXT PRIMARY KEY,
-      eventId TEXT NOT NULL,
-      name TEXT NOT NULL,
-      status TEXT DEFAULT 'PENDING',
-      totalCalls INTEGER DEFAULT 0,
-      answered INTEGER DEFAULT 0,
-      noAnswer INTEGER DEFAULT 0,
-      busy INTEGER DEFAULT 0,
-      failed INTEGER DEFAULT 0,
-      maxRetries INTEGER DEFAULT 2,
-      retryDelayMin INTEGER DEFAULT 30,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (eventId) REFERENCES Event(id)
+    CREATE TABLE IF NOT EXISTS "Rsvp" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "eventId" TEXT NOT NULL,
+      "memberId" TEXT,
+      "guestName" TEXT,
+      "response" TEXT NOT NULL,
+      "guestCount" INTEGER NOT NULL DEFAULT 0,
+      "prayerRequest" TEXT,
+      "message" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("eventId") REFERENCES "Event"("id"),
+      FOREIGN KEY ("memberId") REFERENCES "Member"("id"),
+      UNIQUE("eventId", "memberId")
     );
 
-    CREATE TABLE IF NOT EXISTS CallLog (
-      id TEXT PRIMARY KEY,
-      memberId TEXT NOT NULL,
-      eventId TEXT NOT NULL,
-      campaignId TEXT,
-      status TEXT NOT NULL,
-      duration INTEGER,
-      attemptedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (memberId) REFERENCES Member(id),
-      FOREIGN KEY (eventId) REFERENCES Event(id)
+    CREATE TABLE IF NOT EXISTS "QrCode" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "eventId" TEXT NOT NULL,
+      "memberId" TEXT,
+      "rsvpId" TEXT UNIQUE,
+      "token" TEXT NOT NULL UNIQUE,
+      "isCheckedIn" BOOLEAN NOT NULL DEFAULT 0,
+      "checkedInAt" DATETIME,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("eventId") REFERENCES "Event"("id"),
+      FOREIGN KEY ("memberId") REFERENCES "Member"("id"),
+      FOREIGN KEY ("rsvpId") REFERENCES "Rsvp"("id")
     );
 
-    CREATE TABLE IF NOT EXISTS CommunicationLog (
-      id TEXT PRIMARY KEY,
-      eventId TEXT,
-      memberId TEXT NOT NULL,
-      channel TEXT NOT NULL,
-      status TEXT DEFAULT 'SENT',
-      sentAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (eventId) REFERENCES Event(id),
-      FOREIGN KEY (memberId) REFERENCES Member(id)
+    CREATE TABLE IF NOT EXISTS "Attendance" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "eventId" TEXT NOT NULL,
+      "memberId" TEXT,
+      "qrCodeId" TEXT,
+      "checkedInAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "checkedInBy" TEXT,
+      "method" TEXT NOT NULL,
+      FOREIGN KEY ("eventId") REFERENCES "Event"("id"),
+      FOREIGN KEY ("memberId") REFERENCES "Member"("id"),
+      FOREIGN KEY ("checkedInBy") REFERENCES "User"("id")
     );
 
-    CREATE TABLE IF NOT EXISTS FollowUp (
-      id TEXT PRIMARY KEY,
-      churchId TEXT NOT NULL,
-      memberId TEXT NOT NULL,
-      eventId TEXT,
-      status TEXT DEFAULT 'PENDING',
-      priority TEXT DEFAULT 'NORMAL',
-      notes TEXT,
-      assignedTo TEXT,
-      dueDate DATETIME,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (churchId) REFERENCES Church(id),
-      FOREIGN KEY (memberId) REFERENCES Member(id)
+    CREATE TABLE IF NOT EXISTS "FollowUp" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "eventId" TEXT NOT NULL,
+      "memberId" TEXT NOT NULL,
+      "reason" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'PENDING',
+      "notes" TEXT,
+      "contactedBy" TEXT,
+      "contactedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("eventId") REFERENCES "Event"("id"),
+      FOREIGN KEY ("memberId") REFERENCES "Member"("id")
     );
 
-    CREATE TABLE IF NOT EXISTS PrayerRequest (
-      id TEXT PRIMARY KEY,
-      memberId TEXT NOT NULL,
-      request TEXT NOT NULL,
-      isAnonymous INTEGER DEFAULT 0,
-      status TEXT DEFAULT 'ACTIVE',
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (memberId) REFERENCES Member(id)
+    CREATE TABLE IF NOT EXISTS "AuditLog" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "userId" TEXT NOT NULL,
+      "action" TEXT NOT NULL,
+      "entity" TEXT NOT NULL,
+      "entityId" TEXT,
+      "details" TEXT,
+      "ipAddress" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("userId") REFERENCES "User"("id")
     );
 
-    CREATE TABLE IF NOT EXISTS BibleReading (
-      id TEXT PRIMARY KEY,
-      memberId TEXT NOT NULL,
-      passage TEXT NOT NULL,
-      readAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (memberId) REFERENCES Member(id)
+    CREATE TABLE IF NOT EXISTS "Sermon" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "churchId" TEXT NOT NULL,
+      "title" TEXT NOT NULL,
+      "speaker" TEXT NOT NULL,
+      "date" DATETIME NOT NULL,
+      "description" TEXT,
+      "videoUrl" TEXT,
+      "audioUrl" TEXT,
+      "notesPdf" TEXT,
+      "thumbnail" TEXT,
+      "duration" INTEGER,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("churchId") REFERENCES "Church"("id")
     );
 
-    CREATE TABLE IF NOT EXISTS UserNotification (
-      id TEXT PRIMARY KEY,
-      userId TEXT NOT NULL,
-      title TEXT NOT NULL,
-      body TEXT NOT NULL,
-      type TEXT DEFAULT 'GENERAL',
-      isRead INTEGER DEFAULT 0,
-      data TEXT,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (userId) REFERENCES User(id)
+    CREATE TABLE IF NOT EXISTS "SermonBookmark" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "memberId" TEXT NOT NULL,
+      "sermonId" TEXT NOT NULL,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("memberId") REFERENCES "Member"("id"),
+      FOREIGN KEY ("sermonId") REFERENCES "Sermon"("id"),
+      UNIQUE("memberId", "sermonId")
     );
 
-    CREATE TABLE IF NOT EXISTS PushSubscription (
-      id TEXT PRIMARY KEY,
-      userId TEXT NOT NULL,
-      endpoint TEXT NOT NULL,
-      p256dh TEXT NOT NULL,
-      auth TEXT NOT NULL,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (userId) REFERENCES User(id)
+    CREATE TABLE IF NOT EXISTS "Announcement" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "churchId" TEXT NOT NULL,
+      "title" TEXT NOT NULL,
+      "description" TEXT NOT NULL,
+      "attachment" TEXT,
+      "priority" TEXT NOT NULL DEFAULT 'NORMAL',
+      "isPublished" BOOLEAN NOT NULL DEFAULT 1,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("churchId") REFERENCES "Church"("id")
     );
 
-    CREATE TABLE IF NOT EXISTS SermonBookmark (
-      id TEXT PRIMARY KEY,
-      memberId TEXT NOT NULL,
-      sermonId TEXT NOT NULL,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (memberId) REFERENCES Member(id),
-      FOREIGN KEY (sermonId) REFERENCES Sermon(id),
-      UNIQUE(memberId, sermonId)
+    CREATE TABLE IF NOT EXISTS "PrayerRequest" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "memberId" TEXT NOT NULL,
+      "churchId" TEXT NOT NULL,
+      "title" TEXT NOT NULL,
+      "description" TEXT,
+      "isAnonymous" BOOLEAN NOT NULL DEFAULT 0,
+      "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+      "prayerCount" INTEGER NOT NULL DEFAULT 0,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("memberId") REFERENCES "Member"("id"),
+      FOREIGN KEY ("churchId") REFERENCES "Church"("id")
     );
 
-    CREATE TABLE IF NOT EXISTS _prisma_migrations (
-      id TEXT PRIMARY KEY,
-      checksum TEXT NOT NULL,
-      finished_at DATETIME,
-      migration_name TEXT NOT NULL,
-      logs TEXT,
-      rolled_back_at DATETIME,
-      started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      applied_steps_count INTEGER DEFAULT 0
+    CREATE TABLE IF NOT EXISTS "BibleReading" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "memberId" TEXT NOT NULL,
+      "date" DATETIME NOT NULL,
+      "book" TEXT NOT NULL,
+      "chapter" INTEGER NOT NULL,
+      "verses" TEXT,
+      "notes" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("memberId") REFERENCES "Member"("id"),
+      UNIQUE("memberId", "date")
+    );
+
+    CREATE TABLE IF NOT EXISTS "UserNotification" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "memberId" TEXT NOT NULL,
+      "title" TEXT NOT NULL,
+      "body" TEXT NOT NULL,
+      "type" TEXT NOT NULL DEFAULT 'GENERAL',
+      "isRead" BOOLEAN NOT NULL DEFAULT 0,
+      "link" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("memberId") REFERENCES "Member"("id")
     );
   `);
 
-  console.log("Tables created!");
+  console.log("All tables created!");
 }
 
 async function seed() {
@@ -305,7 +367,7 @@ async function seed() {
 
   const churchId = uuid();
   const adminUserId = uuid();
-  const adminId = uuid();
+  const adminMemberId = uuid();
 
   await db.execute({
     sql: "INSERT OR IGNORE INTO Church (id, name, address, phone, email, timezone) VALUES (?, ?, ?, ?, ?, ?)",
@@ -315,13 +377,13 @@ async function seed() {
   const passwordHash = await bcrypt.hash("admin123", 12);
 
   await db.execute({
-    sql: "INSERT OR IGNORE INTO User (id, email, passwordHash, name, role, churchId) VALUES (?, ?, ?, ?, ?, ?)",
-    args: [adminUserId, "admin@church.com", passwordHash, "Church Admin", "CHURCH_ADMIN", churchId],
+    sql: "INSERT OR IGNORE INTO User (id, email, passwordHash, name, role, churchId, isActive) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    args: [adminUserId, "admin@church.com", passwordHash, "Church Admin", "CHURCH_ADMIN", churchId, 1],
   });
 
   await db.execute({
     sql: "INSERT OR IGNORE INTO Member (id, churchId, fullName, phone, email, isSubscribed) VALUES (?, ?, ?, ?, ?, ?)",
-    args: [adminId, churchId, "Church Admin", "+919876543210", "admin@church.com", 1],
+    args: [adminMemberId, churchId, "Church Admin", "+919876543210", "admin@church.com", 1],
   });
 
   console.log("Admin user created: admin@church.com / admin123");
@@ -342,9 +404,9 @@ async function seed() {
     date.setDate(date.getDate() + i + 1);
 
     await db.execute({
-      sql: `INSERT OR IGNORE INTO Event (id, churchId, name, slug, category, description, startDate, startTime, venue, status, voiceEnabled, rsvpEnabled, qrAttendance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT OR IGNORE INTO Event (id, churchId, createdBy, name, slug, category, description, startDate, startTime, venue, status, voiceEnabled, rsvpEnabled, qrAttendance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
-        eventId, churchId, eventNames[i], slug, categories[i],
+        eventId, churchId, adminUserId, eventNames[i], slug, categories[i],
         `Join us for ${eventNames[i]}`,
         date.toISOString(), "10:00 AM", venues[i], "PUBLISHED",
         1, 1, 1,
@@ -358,6 +420,7 @@ async function seed() {
 
 async function main() {
   try {
+    await dropAllTables();
     await createTables();
     await seed();
   } catch (error) {
