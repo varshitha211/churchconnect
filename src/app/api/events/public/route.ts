@@ -24,12 +24,12 @@ export async function GET() {
       },
     });
 
-    const data = events.map((e) => ({
+    const data = events.map((e: any) => ({
       ...e,
       rsvpCounts: {
-        attending: e.rsvps.filter((r) => r.response === "ATTENDING").length,
-        maybe: e.rsvps.filter((r) => r.response === "MAYBE").length,
-        notAttending: e.rsvps.filter((r) => r.response === "NOT_ATTENDING").length,
+        attending: e.rsvps.filter((r: any) => r.response === "ATTENDING").length,
+        maybe: e.rsvps.filter((r: any) => r.response === "MAYBE").length,
+        notAttending: e.rsvps.filter((r: any) => r.response === "NOT_ATTENDING").length,
       },
     }));
 
