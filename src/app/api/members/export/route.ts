@@ -17,7 +17,7 @@ export async function GET() {
     const header = "fullName,phone,whatsappNumber,email,ageGroup,gender,area\n";
     const rows = members
       .map(
-        (m) =>
+        (m: any) =>
           `"${m.fullName}","${m.phone}","${m.whatsappNumber || ""}","${m.email || ""}","${m.ageGroup || ""}","${m.gender || ""}","${m.area || ""}"`
       )
       .join("\n");
