@@ -1,0 +1,18 @@
+services:
+  churchconnect:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - churchconnect-data:/app/data
+    environment:
+      - DATABASE_URL=file:/app/data/churchconnect.db
+      - JWT_SECRET=${JWT_SECRET:-change-this-to-a-random-secret}
+      - CHURCH_NAME=${CHURCH_NAME:-Sion Holy Church}
+      - NEXT_PUBLIC_VAPID_PUBLIC_KEY=${NEXT_PUBLIC_VAPID_PUBLIC_KEY}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:admin@sionholychurch.com}
+    restart: unless-stopped
+
+volumes:
+  churchconnect-data:

@@ -1,0 +1,6 @@
+fullName,phone,whatsappNumber,email,ageGroup,gender,area
+John Abraham,+919876543211,+919876543211,john@example.com,ADULT,MALE,Downtown
+Mary Thomas,+919876543212,+919876543212,,FEMALE,Uptown
+Samuel Raj,+919876543213,+919876543213,sam@example.com,YOUTH,MALE,Suburbs
+Ruth Peter,+919876543214,+919876543214,,FEMALE,YOUTH,Downtown
+David John,+919876543215,+919876543215,,MALE,SENIOR,East Side
