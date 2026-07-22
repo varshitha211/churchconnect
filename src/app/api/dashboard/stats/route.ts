@@ -36,42 +36,47 @@ export async function GET() {
       prisma.attendance.count(),
     ]);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const commStats = communicationStats as any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cStats = callStats as any[];
+
     const whatsappPrepared =
-      communicationStats
-        .filter((c) => c.channel === "WHATSAPP")
-        .reduce((sum, c) => sum + c._count, 0) || 0;
+      commStats
+        .filter((c: { channel: string }) => c.channel === "WHATSAPP")
+        .reduce((sum: number, c: { _count: number }) => sum + c._count, 0) || 0;
 
     const whatsappSent =
-      communicationStats
+      commStats
         .filter(
-          (c) =>
+          (c: { channel: string; status: string }) =>
             c.channel === "WHATSAPP" &&
             ["SENT", "DELIVERED", "OPENED"].includes(c.status)
         )
-        .reduce((sum, c) => sum + c._count, 0) || 0;
+        .reduce((sum: number, c: { _count: number }) => sum + c._count, 0) || 0;
 
     const totalCalls =
-      callStats.reduce((sum, c) => sum + c._count, 0) || 0;
+      cStats.reduce((sum: number, c: { _count: number }) => sum + c._count, 0) || 0;
 
     const callsAnswered =
-      callStats
-        .filter((c) => c.status === "ANSWERED" || c.status === "COMPLETED")
-        .reduce((sum, c) => sum + c._count, 0) || 0;
+      cStats
+        .filter((c: { status: string }) => c.status === "ANSWERED" || c.status === "COMPLETED")
+        .reduce((sum: number, c: { _count: number }) => sum + c._count, 0) || 0;
 
     const callsNoAnswer =
-      callStats
-        .filter((c) => c.status === "NO_ANSWER")
-        .reduce((sum, c) => sum + c._count, 0) || 0;
+      cStats
+        .filter((c: { status: string }) => c.status === "NO_ANSWER")
+        .reduce((sum: number, c: { _count: number }) => sum + c._count, 0) || 0;
 
     const callsBusy =
-      callStats
-        .filter((c) => c.status === "BUSY")
-        .reduce((sum, c) => sum + c._count, 0) || 0;
+      cStats
+        .filter((c: { status: string }) => c.status === "BUSY")
+        .reduce((sum: number, c: { _count: number }) => sum + c._count, 0) || 0;
 
     const callsFailed =
-      callStats
-        .filter((c) => c.status === "FAILED")
-        .reduce((sum, c) => sum + c._count, 0) || 0;
+      cStats
+        .filter((c: { status: string }) => c.status === "FAILED")
+        .reduce((sum: number, c: { _count: number }) => sum + c._count, 0) || 0;
 
     return NextResponse.json({
       success: true,
