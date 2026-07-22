@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
       if (!event) {
         return NextResponse.json({ error: "Event not found" }, { status: 404 });
       }
-      if (event.status !== "LIVE") {
-        return NextResponse.json({ error: "This event is not currently live" }, { status: 400 });
+      if (event.status !== "LIVE" && event.status !== "PUBLISHED") {
+        return NextResponse.json({ error: "This event is not available for check-in" }, { status: 400 });
       }
 
       if (!memberId) {
@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
       if (!event) {
         return NextResponse.json({ error: "Event not found" }, { status: 404 });
       }
-      if (event.status !== "LIVE") {
-        return NextResponse.json({ error: "This event is not currently live" }, { status: 400 });
+      if (event.status !== "LIVE" && event.status !== "PUBLISHED") {
+        return NextResponse.json({ error: "This event is not available for check-in" }, { status: 400 });
       }
 
       const existing = await prisma.attendance.findFirst({

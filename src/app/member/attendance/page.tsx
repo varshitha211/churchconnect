@@ -54,7 +54,7 @@ export default function AttendancePage() {
       }
 
       if (eventsData.success) {
-        const liveEvents = eventsData.data.filter((e: LiveEvent) => e.status === "LIVE");
+        const liveEvents = eventsData.data.filter((e: LiveEvent) => e.status === "LIVE" || e.status === "PUBLISHED");
         setEvents(liveEvents);
       }
 
@@ -177,7 +177,7 @@ export default function AttendancePage() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse-glow" />
                     <span className="text-xs font-bold text-green-600 uppercase tracking-wider">
-                      Live
+                      {event.status === "LIVE" ? "Live" : "Open"}
                     </span>
                   </div>
                   <h3 className="text-lg font-bold">{event.name}</h3>
