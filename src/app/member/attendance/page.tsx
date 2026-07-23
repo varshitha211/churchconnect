@@ -55,7 +55,7 @@ export default function AttendancePage() {
       }
 
       if (eventsData.success) {
-        const liveEvents = eventsData.data.filter((e: LiveEvent) => e.status === "LIVE" || e.status === "PUBLISHED");
+        const liveEvents = eventsData.data.filter((e: LiveEvent) => e.status === "LIVE");
         setEvents(liveEvents);
       }
 

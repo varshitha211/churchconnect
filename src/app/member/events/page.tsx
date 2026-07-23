@@ -26,8 +26,8 @@ export default function EventsPage() {
 
   const now = new Date();
   const filtered = events.filter((e) => {
-    if (e.status === "LIVE") return true;
-    return filter === "upcoming" ? new Date(e.startDate) >= now : new Date(e.startDate) < now;
+    if (filter === "upcoming") return e.status === "PUBLISHED";
+    return e.status === "COMPLETED" || (e.status !== "LIVE" && new Date(e.startDate) < now);
   });
 
   function addToCalendar(e: EventData) {

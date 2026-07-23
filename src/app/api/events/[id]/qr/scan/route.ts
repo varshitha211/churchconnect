@@ -63,6 +63,17 @@ export async function POST(
       return NextResponse.json({ error: "memberId or token required" }, { status: 400 });
     }
 
+    const event = await prisma.event.findUnique({
+      where: { id },
+      select: { id: true, status: true },
+    });
+    if (!event) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+    if (event.status !== "LIVE") {
+      return NextResponse.json({ error: "This event is not available for check-in" }, { status: 400 });
+    }
+
     const member = await prisma.member.findUnique({
       where: { id: targetMemberId },
       select: { id: true, fullName: true },
