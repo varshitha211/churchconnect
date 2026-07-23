@@ -35,7 +35,7 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState<string | null>(null);
   const [showQr, setShowQr] = useState<string | null>(null);
-  const [scanResult, setScanResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [scanResult, setScanResult] = useState<{ ok: boolean; msg: string; eventId: string } | null>(null);
   const scannerRef = useRef<unknown>(null);
   const scanCooldown = useRef(false);
 
@@ -114,15 +114,15 @@ export default function AttendancePage() {
             });
             const data = await res.json();
             if (data.success) {
-              setScanResult({ ok: true, msg: "Attendance marked!" });
+              setScanResult({ ok: true, msg: "Attendance marked!", eventId });
               setCheckedInEvents((prev) => new Set([...prev, eventId]));
               toast.success("Attendance marked!");
             } else {
-              setScanResult({ ok: false, msg: data.error || "Check-in failed" });
+              setScanResult({ ok: false, msg: data.error || "Check-in failed", eventId });
               toast.error(data.error || "Check-in failed");
             }
           } catch {
-            setScanResult({ ok: false, msg: "Network error" });
+            setScanResult({ ok: false, msg: "Network error", eventId });
             toast.error("Network error");
           }
           stopScanner();
@@ -130,7 +130,7 @@ export default function AttendancePage() {
         () => {}
       );
     } catch {
-      setScanResult({ ok: false, msg: "Camera not available" });
+      setScanResult({ ok: false, msg: "Camera not available", eventId });
       setScanning(null);
     }
   }
@@ -289,7 +289,7 @@ export default function AttendancePage() {
                 </motion.div>
               )}
 
-              {scanResult && (
+              {scanResult && scanResult.eventId === event.id && (
                 <div
                   className={`mt-3 p-3 rounded-xl text-sm font-medium ${scanResult.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
                 >
