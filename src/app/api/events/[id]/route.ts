@@ -105,28 +105,24 @@ export async function DELETE(
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    await prisma.$transaction(async (tx) => {
-      const callCampaigns = await tx.callCampaign.findMany({
-        where: { eventId: id },
-        select: { id: true },
-      });
-      const campaignIds = callCampaigns.map((c: { id: string }) => c.id);
-
-      if (campaignIds.length > 0) {
-        await tx.callLog.deleteMany({ where: { campaignId: { in: campaignIds } } });
-      }
-
-      await tx.qrCode.deleteMany({ where: { eventId: id } });
-      await tx.rsvp.deleteMany({ where: { eventId: id } });
-      await tx.eventRecipient.deleteMany({ where: { eventId: id } });
-      await tx.communicationLog.deleteMany({ where: { eventId: id } });
-      await tx.callCampaign.deleteMany({ where: { eventId: id } });
-      await tx.attendance.deleteMany({ where: { eventId: id } });
-      await tx.followUp.deleteMany({ where: { eventId: id } });
-      await tx.notificationLog.deleteMany({ where: { eventId: id } });
-
-      await tx.event.delete({ where: { id } });
+    const callCampaigns = await prisma.callCampaign.findMany({
+      where: { eventId: id },
+      select: { id: true },
     });
+    for (const c of callCampaigns) {
+      await prisma.callLog.deleteMany({ where: { campaignId: c.id } });
+    }
+
+    await prisma.qrCode.deleteMany({ where: { eventId: id } });
+    await prisma.rsvp.deleteMany({ where: { eventId: id } });
+    await prisma.eventRecipient.deleteMany({ where: { eventId: id } });
+    await prisma.communicationLog.deleteMany({ where: { eventId: id } });
+    await prisma.callCampaign.deleteMany({ where: { eventId: id } });
+    await prisma.attendance.deleteMany({ where: { eventId: id } });
+    await prisma.followUp.deleteMany({ where: { eventId: id } });
+    await prisma.notificationLog.deleteMany({ where: { eventId: id } });
+
+    await prisma.event.delete({ where: { id } });
 
     return NextResponse.json({ success: true, message: "Event deleted successfully" });
   } catch (error) {
