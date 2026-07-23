@@ -19,7 +19,12 @@ export async function POST(
     let targetMemberId = memberId;
 
     if (token && !targetMemberId) {
-      const decoded = decodeURIComponent(token);
+      let decoded = decodeURIComponent(token);
+
+      if (decoded.includes("/scan?token=")) {
+        const url = new URL(decoded);
+        decoded = url.searchParams.get("token") || decoded;
+      }
 
       if (decoded === `event:${id}`) {
         return NextResponse.json({

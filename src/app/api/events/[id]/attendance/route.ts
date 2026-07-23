@@ -15,13 +15,28 @@ export async function GET(
 
     const { id } = await params;
 
-    const attendance = await prisma.attendance.findMany({
-      where: { eventId: id },
-      include: { member: { select: { fullName: true, phone: true } } },
-      orderBy: { checkedInAt: "desc" },
-    });
+    const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true } });
+    if (!event) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
 
-    return NextResponse.json({ success: true, data: attendance });
+    const [attendance, allMembers] = await Promise.all([
+      prisma.attendance.findMany({
+        where: { eventId: id },
+        include: { member: { select: { id: true, fullName: true, phone: true, email: true } } },
+        orderBy: { checkedInAt: "desc" },
+      }),
+      prisma.member.findMany({
+        where: { churchId: event.churchId, isArchived: false },
+        select: { id: true, fullName: true, phone: true, email: true },
+        orderBy: { fullName: "asc" },
+      }),
+    ]);
+
+    const attendedIds = new Set(attendance.filter((a) => a.memberId).map((a) => a.memberId));
+    const absent = allMembers.filter((m) => !attendedIds.has(m.id));
+
+    return NextResponse.json({ success: true, data: attendance, absent });
   } catch (error) {
     console.error("List attendance error:", error);
     return NextResponse.json({ error: "Failed to fetch attendance" }, { status: 500 });

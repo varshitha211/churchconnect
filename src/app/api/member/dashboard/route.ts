@@ -51,7 +51,7 @@ export async function GET() {
         stats: {
           attendanceMonth: attendedMonth,
           attendanceYear: attendedYear,
-          attendancePercent: totalSundaysInMonth > 0 ? Math.round((attendedMonth / totalSundaysInMonth) * 100) : 0,
+          attendancePercent: totalSundaysInMonth > 0 ? Math.min(Math.round((attendedMonth / totalSundaysInMonth) * 100), 100) : 0,
           upcomingEvents: totalEvents,
           prayerRequests: recentPrayers.length,
           unreadNotifications: unreadNotifs,

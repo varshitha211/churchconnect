@@ -9,7 +9,7 @@ interface AttendanceRecord {
   id: string;
   checkedInAt: string;
   method: string;
-  member?: { fullName: string; phone: string } | null;
+  member?: { fullName: string; phone: string; email: string } | null;
 }
 
 interface QrCodeItem {
@@ -23,6 +23,7 @@ interface Member {
   id: string;
   fullName: string;
   phone: string;
+  email: string;
 }
 
 export default function AttendancePage() {
@@ -31,6 +32,7 @@ export default function AttendancePage() {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [qrCodes, setQrCodes] = useState<QrCodeItem[]>([]);
   const [allMembers, setAllMembers] = useState<Member[]>([]);
+  const [absentMembers, setAbsentMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"checkin" | "qrcodes">("checkin");
   const [generatingQr, setGeneratingQr] = useState(false);
@@ -54,6 +56,7 @@ export default function AttendancePage() {
       const qrData = await qrRes.json();
       const memData = await memRes.json();
       if (attData.success) setRecords(attData.data);
+      if (attData.absent) setAbsentMembers(attData.absent);
       if (qrData.success) setQrCodes(qrData.data);
       if (memData.success) setAllMembers(memData.data);
     } catch (error) {
@@ -90,6 +93,7 @@ export default function AttendancePage() {
             if (data.success) {
               setScanResult({ ok: true, msg: `Attendance marked for ${data.memberName}` });
               loadAttendance();
+              stopCameraScan();
             } else {
               setScanResult({ ok: false, msg: data.error || "Check-in failed" });
             }
@@ -397,7 +401,7 @@ export default function AttendancePage() {
             </div>
           ) : (
             <div className="card">
-              <h3 className="font-semibold mb-3">Attendance Records ({records.length})</h3>
+              <h3 className="font-semibold mb-3">Attended ({records.length})</h3>
               <div className="table-container">
                 <table>
                   <thead>
@@ -405,6 +409,7 @@ export default function AttendancePage() {
                       <th>#</th>
                       <th>Name</th>
                       <th>Phone</th>
+                      <th className="hidden sm:table-cell">Email</th>
                       <th>Method</th>
                       <th>Time</th>
                     </tr>
@@ -415,6 +420,7 @@ export default function AttendancePage() {
                         <td>{i + 1}</td>
                         <td className="font-medium">{r.member?.fullName || "—"}</td>
                         <td className="text-sm">{r.member?.phone || "—"}</td>
+                        <td className="text-sm text-muted-foreground hidden sm:table-cell">{r.member?.email || "—"}</td>
                         <td>
                           <span className={`badge ${r.method === "QR_SCAN" ? "badge-info" : "badge-success"}`}>
                             {r.method === "QR_SCAN" ? "📱 QR" : "✏️ Manual"}
@@ -428,6 +434,34 @@ export default function AttendancePage() {
                   </tbody>
                 </table>
               </div>
+
+              {absentMembers.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="font-semibold mb-3 text-destructive">Absent ({absentMembers.length})</h3>
+                  <div className="table-container">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Name</th>
+                          <th>Phone</th>
+                          <th className="hidden sm:table-cell">Email</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {absentMembers.map((m, i) => (
+                          <tr key={m.id}>
+                            <td>{i + 1}</td>
+                            <td className="font-medium">{m.fullName}</td>
+                            <td className="text-sm">{m.phone}</td>
+                            <td className="text-sm text-muted-foreground hidden sm:table-cell">{m.email}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

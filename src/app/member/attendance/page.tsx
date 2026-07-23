@@ -37,6 +37,7 @@ export default function AttendancePage() {
   const [showQr, setShowQr] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const scannerRef = useRef<unknown>(null);
+  const scanCooldown = useRef(false);
 
   const load = useCallback(async () => {
     try {
@@ -85,6 +86,9 @@ export default function AttendancePage() {
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         async (decodedText: string) => {
+          if (scanCooldown.current) return;
+          scanCooldown.current = true;
+          setTimeout(() => { scanCooldown.current = false; }, 3000);
           try {
             const isVenueQr = decodedText.startsWith("event:");
             const payload: Record<string, string> = { token: decodedText };

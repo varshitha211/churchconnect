@@ -8,7 +8,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Token is required" }, { status: 400 });
     }
 
-    const decoded = decodeURIComponent(token);
+    let decoded = decodeURIComponent(token);
+
+    if (decoded.includes("/scan?token=")) {
+      try {
+        const url = new URL(decoded);
+        decoded = url.searchParams.get("token") || decoded;
+      } catch {}
+    }
 
     if (decoded.startsWith("event:")) {
       const eventId = decoded.replace("event:", "");
