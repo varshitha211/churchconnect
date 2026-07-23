@@ -95,6 +95,7 @@ export default function AttendancePage() {
             }
           } catch {}
 
+          let scanOk = false;
           try {
             const res = await fetch(`/api/events/${eventId}/qr/scan`, {
               method: "POST",
@@ -105,13 +106,16 @@ export default function AttendancePage() {
             if (data.success) {
               setScanResult({ ok: true, msg: `Attendance marked for ${data.memberName}` });
               loadAttendance();
-              stopCameraScan();
+              scanOk = true;
             } else {
               setScanResult({ ok: false, msg: data.error || "Check-in failed" });
-              processingScan.current = false;
             }
           } catch (err) {
             setScanResult({ ok: false, msg: `Scan failed: ${err instanceof Error ? err.message : "Unknown error"}` });
+          }
+          if (scanOk) {
+            stopCameraScan();
+          } else {
             processingScan.current = false;
           }
         },
@@ -125,8 +129,8 @@ export default function AttendancePage() {
 
   function stopCameraScan() {
     if (scannerRef.current) {
-      (scannerRef.current as { stop: () => Promise<void> }).stop().catch(() => {});
-      (scannerRef.current as { clear: () => void }).clear();
+      try { (scannerRef.current as { stop: () => Promise<void> }).stop().catch(() => {}); } catch {}
+      try { (scannerRef.current as { clear: () => void }).clear(); } catch {}
       scannerRef.current = null;
     }
     setCameraActive(false);
