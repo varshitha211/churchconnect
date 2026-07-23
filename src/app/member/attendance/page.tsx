@@ -75,6 +75,16 @@ export default function AttendancePage() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    const interval = setInterval(() => { load(); }, 15000);
+    const onFocus = () => { load(); };
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [load]);
+
   async function startScanner(eventId: string) {
     setScanning(eventId);
     setScanResult(null);

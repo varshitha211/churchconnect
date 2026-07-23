@@ -44,6 +44,7 @@ export default function AttendancePage() {
   const [checking, setChecking] = useState(false);
   const scannerRef = useRef<unknown>(null);
   const scanCooldown = useRef(false);
+  const processingScan = useRef(false);
 
   const loadAttendance = useCallback(async () => {
     try {
@@ -71,6 +72,8 @@ export default function AttendancePage() {
   async function startCameraScan() {
     setCameraActive(true);
     setScanResult(null);
+    processingScan.current = false;
+    scanCooldown.current = false;
     try {
       const { Html5Qrcode } = await import("html5-qrcode");
       const scanner = new Html5Qrcode("admin-qr-scanner");
@@ -79,7 +82,8 @@ export default function AttendancePage() {
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         async (decodedText: string) => {
-          if (scanCooldown.current) return;
+          if (scanCooldown.current || processingScan.current) return;
+          processingScan.current = true;
           scanCooldown.current = true;
           setTimeout(() => { scanCooldown.current = false; }, 2000);
 
@@ -88,8 +92,6 @@ export default function AttendancePage() {
             if (decodedText.includes("/scan?token=")) {
               const url = new URL(decodedText);
               tokenToSend = url.searchParams.get("token") || decodedText;
-            } else if (decodedText.startsWith("http")) {
-              tokenToSend = decodedText;
             }
           } catch {}
 
@@ -106,11 +108,11 @@ export default function AttendancePage() {
               stopCameraScan();
             } else {
               setScanResult({ ok: false, msg: data.error || "Check-in failed" });
-              stopCameraScan();
+              processingScan.current = false;
             }
           } catch (err) {
             setScanResult({ ok: false, msg: `Scan failed: ${err instanceof Error ? err.message : "Unknown error"}` });
-            stopCameraScan();
+            processingScan.current = false;
           }
         },
         () => {}
@@ -128,6 +130,8 @@ export default function AttendancePage() {
       scannerRef.current = null;
     }
     setCameraActive(false);
+    processingScan.current = false;
+    scanCooldown.current = false;
   }
 
   function handleOptionClick(option: "scan" | "showqr" | "manual") {
