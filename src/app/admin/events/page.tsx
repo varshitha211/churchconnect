@@ -23,6 +23,8 @@ export default function EventsPage() {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -47,6 +49,19 @@ export default function EventsPage() {
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
   useEffect(() => { setPage(1); }, [search, status]);
+
+  async function deleteEvent(eventId: string) {
+    setDeletingId(eventId);
+    try {
+      const res = await fetch(`/api/events/${eventId}`, { method: "DELETE" });
+      if (res.ok) {
+        setEvents((prev) => prev.filter((e) => e.id !== eventId));
+      }
+    } catch {} finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
+    }
+  }
 
   function statusBadge(s: string) {
     const map: Record<string, string> = {
@@ -97,13 +112,9 @@ export default function EventsPage() {
         ) : (
           <div className="space-y-3">
             {events.map((event) => (
-              <Link
-                key={event.id}
-                href={`/admin/events/${event.id}`}
-                className="block p-4 rounded-lg border border-border hover:bg-muted transition-colors"
-              >
+              <div key={event.id} className="p-4 rounded-lg border border-border hover:bg-muted transition-colors">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
+                  <Link href={`/admin/events/${event.id}`} className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold truncate">{event.name}</h3>
                       {statusBadge(event.status)}
@@ -116,23 +127,50 @@ export default function EventsPage() {
                         year: "numeric", month: "short", day: "numeric",
                       })} at {event.startTime}
                     </p>
-                  </div>
-                  <div className="flex gap-4 text-center text-xs text-muted-foreground shrink-0">
-                    <div>
-                      <p className="font-semibold text-foreground">{event._count.recipients}</p>
-                      <p>Invited</p>
+                  </Link>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex gap-4 text-center text-xs text-muted-foreground">
+                      <div>
+                        <p className="font-semibold text-foreground">{event._count.recipients}</p>
+                        <p>Invited</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">{event._count.rsvps}</p>
+                        <p>RSVP</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">{event._count.attendance}</p>
+                        <p>Attended</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{event._count.rsvps}</p>
-                      <p>RSVP</p>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{event._count.attendance}</p>
-                      <p>Attended</p>
-                    </div>
+                    {confirmDeleteId === event.id ? (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => deleteEvent(event.id)}
+                          disabled={deletingId === event.id}
+                          className="text-xs px-2 py-1 rounded bg-destructive text-white hover:bg-destructive/90"
+                        >
+                          {deletingId === event.id ? "..." : "Yes"}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="text-xs px-2 py-1 rounded bg-muted text-foreground hover:bg-muted/80"
+                        >
+                          No
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.preventDefault(); setConfirmDeleteId(event.id); }}
+                        className="text-xs px-2 py-1 rounded text-destructive hover:bg-destructive/10"
+                        title="Delete event"
+                      >
+                        🗑️
+                      </button>
+                    )}
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}

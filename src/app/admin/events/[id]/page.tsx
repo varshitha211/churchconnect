@@ -39,6 +39,8 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<EventData | null>(null);
   const [loading, setLoading] = useState(true);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     fetch(`/api/events/${id}`)
@@ -61,6 +63,24 @@ export default function EventDetailPage() {
     });
     if (res.ok) {
       setEvent((prev) => (prev ? { ...prev, status } : prev));
+    }
+  }
+
+  async function deleteEvent() {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/events/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        router.push("/admin/events");
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to delete event");
+      }
+    } catch {
+      alert("Failed to delete event");
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
     }
   }
 
@@ -128,6 +148,12 @@ export default function EventDetailPage() {
           <Link href={`/admin/events/${id}/invite`} className="btn btn-secondary">
             Invite Members
           </Link>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="btn btn-destructive"
+          >
+            Delete
+          </button>
         </div>
       </div>
 
@@ -288,6 +314,33 @@ export default function EventDetailPage() {
           <p className="text-sm font-medium mt-1">Attendance</p>
         </Link>
       </div>
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="card max-w-sm w-full mx-4 space-y-4">
+            <h3 className="text-lg font-bold text-destructive">Delete Event</h3>
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete <strong>{event.name}</strong>? This will permanently remove all event data including attendance records, RSVPs, QR codes, call campaigns, and notifications. This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="btn btn-secondary"
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={deleteEvent}
+                className="btn btn-destructive"
+                disabled={deleting}
+              >
+                {deleting ? "Deleting..." : "Delete Permanently"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

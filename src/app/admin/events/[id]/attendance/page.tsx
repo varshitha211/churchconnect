@@ -83,11 +83,21 @@ export default function AttendancePage() {
           scanCooldown.current = true;
           setTimeout(() => { scanCooldown.current = false; }, 2000);
 
+          let tokenToSend = decodedText;
+          try {
+            if (decodedText.includes("/scan?token=")) {
+              const url = new URL(decodedText);
+              tokenToSend = url.searchParams.get("token") || decodedText;
+            } else if (decodedText.startsWith("http")) {
+              tokenToSend = decodedText;
+            }
+          } catch {}
+
           try {
             const res = await fetch(`/api/events/${eventId}/qr/scan`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ token: decodedText }),
+              body: JSON.stringify({ token: tokenToSend }),
             });
             const data = await res.json();
             if (data.success) {
@@ -96,9 +106,11 @@ export default function AttendancePage() {
               stopCameraScan();
             } else {
               setScanResult({ ok: false, msg: data.error || "Check-in failed" });
+              stopCameraScan();
             }
-          } catch {
-            setScanResult({ ok: false, msg: "Network error during check-in" });
+          } catch (err) {
+            setScanResult({ ok: false, msg: `Scan failed: ${err instanceof Error ? err.message : "Unknown error"}` });
+            stopCameraScan();
           }
         },
         () => {}

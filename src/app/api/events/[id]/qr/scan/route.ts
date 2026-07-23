@@ -21,12 +21,14 @@ export async function POST(
     if (token && !targetMemberId) {
       let decoded = decodeURIComponent(token);
 
-      if (decoded.includes("/scan?token=")) {
-        const url = new URL(decoded);
-        decoded = url.searchParams.get("token") || decoded;
-      }
+      try {
+        if (decoded.includes("/scan?token=")) {
+          const url = new URL(decoded);
+          decoded = url.searchParams.get("token") || decoded;
+        }
+      } catch {}
 
-      if (decoded === `event:${id}`) {
+      if (decoded.startsWith("event:")) {
         return NextResponse.json({
           success: false,
           isVenueQr: true,
@@ -34,11 +36,10 @@ export async function POST(
         });
       }
 
-      const colonParts = decoded.split(":");
-
-      if (colonParts.length === 2) {
-        targetMemberId = colonParts[0];
-        const tokenId = colonParts[1];
+      const colonIdx = decoded.indexOf(":");
+      if (colonIdx > 0 && colonIdx < decoded.length - 1) {
+        targetMemberId = decoded.substring(0, colonIdx);
+        const tokenId = decoded.substring(colonIdx + 1);
         if (tokenId !== id) {
           return NextResponse.json({ error: "QR code is for a different event" }, { status: 400 });
         }
